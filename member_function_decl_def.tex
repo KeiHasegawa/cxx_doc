@@ -1,0 +1,81 @@
+\documentclass{jarticle}
+
+\begin{document}
+
+\large
+{\bf{メンバ函数の宣言と定義が同時にされたとき}}
+\normalsize
+
+\begin{verbatim}
+struct S {
+  int f(){ A x; /* ... */ return a; }  // OK
+  typedef int A
+  int a;
+};
+\end{verbatim}
+この例では {\tt{typedef}} 名 {\tt{A}} やメンバ変数 {\tt{a}} の宣言の前に
+メンバ函数 {\tt{f}} で
+{\tt{A}} や {\tt{a}} の参照がある. これを正しく構文解析するためには
+{\tt{f}} のボディを一旦保存し, 後から構文解析する必要がある.
+
+\begin{verbatim}
+struct S {
+  int f()  /* { A x; ... return a; } を保存する
+              int f(); と等価な動作をする. */
+  int a;
+} /* ここで S が完全型になるので, このタイミングで f() の
+     構文解析を開始する. */
+;
+\end{verbatim}
+保存されたメンバ函数に対する構文解析は {\tt{yyparse}} を呼び出すこと
+により実現したい. この場合, 構文解析器の初期状態番号は
+\begin{verbatim}
+state 100
+
+  557 function_definition: function_definition_begin1 . function_body
+
+    '{'  shift, and go to state 234
+
+    function_body       go to state 235
+    compound_statement  go to state 236
+\end{verbatim}
+であれば 100 にする必要がある. また {\tt{yylex()}} の呼び出しにより
+返される字句は保存されたものである必要もある.
+\begin{verbatim}
+int yyparse()
+{
+  int yystate;
+  ...
+  yystate = 0; // 通常通りの初期状態
+  if (保存されたメンバ函数の構文解析)
+    yystate = 100;  // 上書きする
+}
+\end{verbatim}
+また, 文法記号 {\tt{function\_definition}} が還元されたら
+{\tt{yyparse}} から復帰する必要がある.
+\begin{verbatim}
+state 102
+
+    6 declaration: function_definition .
+
+    $default  reduce using rule 6 (declaration)
+\end{verbatim}
+であれば,
+\begin{verbatim}
+int yyparse()
+{
+  ...
+
+  // 還元動作のコード ここから
+  ...
+  // 還元動作のコード ここまで
+
+  if (yystate == 102 && 保存されたメンバ函数のコンパイル)
+    return 0;  // 構文解析が正しく行なわれたので復帰する.
+
+  ...
+} 
+\end{verbatim}
+のようにすればよい.
+
+\end{document}

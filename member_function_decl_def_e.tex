@@ -1,0 +1,82 @@
+\documentclass{article}
+
+\begin{document}
+
+\large
+{\bf{Member function is declared and defined at the same time.}}
+\normalsize
+
+\begin{verbatim}
+struct S {
+  int f(){ A x; /* ... */ return a; }  // OK
+  typedef int A
+  int a;
+};
+\end{verbatim}
+In this example,
+before {\tt{typedef-name}} `{\tt{A}}' and member variable `{\tt{a}}'
+are declared, member function `{\tt{f}}' refers to `{\tt{A}}' and
+`{\tt{a}}'. To parse correctly, it's necessary to save member
+function `{\tt{f}}' body once and after do parse.
+
+\begin{verbatim}
+struct S {
+  int f()  /* { A x; ... return a; } are saved.
+              Do like int f(); */
+  int a;
+} /* At this point, `S' becomes complete type, and do parse saved
+     member function `f' body. */
+;
+\end{verbatim}
+If it's possible to realize parsing saved member function body
+by just calling `{\tt{yyparse}}'. We have to change the nubmer
+of initial state:
+\begin{verbatim}
+state 100
+
+  557 function_definition: function_definition_begin1 . function_body
+
+    '{'  shift, and go to state 234
+
+    function_body       go to state 235
+    compound_statement  go to state 236
+\end{verbatim}
+In this case, change to `100'. Also note that tokens must be
+saved one.
+\begin{verbatim}
+int yyparse()
+{
+  int yystate;
+  ...
+  yystate = 0; // Usual initial state number
+  if (saved member function parse analysis)
+    yystate = 100;  // overwrite!
+}
+\end{verbatim}
+When non-terminal `{\tt{function\_definition}}' is reduced,
+it's necessary to return from `{\tt{yyparse}}':
+\begin{verbatim}
+state 102
+
+    6 declaration: function_definition .
+
+    $default  reduce using rule 6 (declaration)
+\end{verbatim}
+In this case, change `yyparse' like bellow:
+\begin{verbatim}
+int yyparse()
+{
+  ...
+
+  // Reduce code. Frome here.
+  ...
+  // Reduce code. To here.
+
+  if (yystate == 102 && saved member function parse analysis)
+    return 0;  // Parse analysis is done normally. So return 0.
+
+  ...
+} 
+\end{verbatim}
+
+\end{document}

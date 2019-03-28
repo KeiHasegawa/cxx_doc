@@ -1,0 +1,104 @@
+\documentclass{jarticle}
+
+\usepackage{graphicx}
+
+\begin{document}
+
+\section{仮想函数の実現}
+
+\begin{verbatim}
+struct B {
+  ...
+  virtual int vf0();
+  virtual int vf1();
+  ...
+  virtual int vf4();
+};
+\end{verbatim}
+{\tt {B}} のレイアウトは図 \ref{derived000} のようになる.
+
+\begin{figure}[htbp]
+\begin{center}
+\includegraphics[width=1.0\linewidth,height=0.6\linewidth]{virtual_function.eps}
+\caption{{\tt{B}} のレイアウト}
+\label{derived000}
+\end{center}
+\end{figure}
+
+よって仮想函数呼び出し
+\begin{verbatim}
+int g(B* pb){ return pb->vf3(); }
+\end{verbatim}
+に対する 3 番地コードは以下のようになる.
+\begin{verbatim}
+g:
+  t0 := *pb
+  t1 := t0 + (vftbl の &B:vf3 があるところまでのオフセット)
+  t2 := *t1
+  t3 := call t2
+  return t3
+\end{verbatim}
+%% ここでコンパイラは {\tt{vf3}} が {\tt{B}} における 3 番目の仮想函数であ
+%% ることを知っている必要がある.
+
+{\tt{B}} から {\tt{D}} を以下のようにして派生した場合,
+\begin{verbatim}
+struct D : B {
+  int vf3();  // 仮想函数の上書き
+  virtual int vf5();
+  virtual int vf6();
+  ...
+  virtual int vf9();
+};
+\end{verbatim}
+{\tt {D}} のレイアウトは図 \ref{derived002} のようになる.
+
+\vspace{0.5cm}
+\begin{figure}[htbp]
+\begin{center}
+\includegraphics[width=0.91\linewidth,height=1.0\linewidth]{virtual_function2.eps}
+\caption{{\tt{D}} のレイアウト}
+\label{derived002}
+\end{center}
+\end{figure}
+
+\section{仮想基底クラスの実現}
+
+\begin{verbatim}
+struct B0 { /* ... */ };
+struct B1 { /* ... */ };
+...
+struct B4 { /* ... */ };
+struct D : virtual B0, virtual B1, ..., virtual B4 {};
+\end{verbatim}
+{\tt {D}} のレイアウトは図 \ref{derived001} のようになる.
+
+\vspace{0.5cm}
+\begin{figure}[htbp]
+\begin{center}
+\includegraphics[width=0.95\linewidth,height=1.0\linewidth]{virtual_base.eps}
+\caption{{\tt{D}} のレイアウト}
+\label{derived001}
+\end{center}
+\end{figure}
+
+よって
+\begin{verbatim}
+B3* f(D* pd){ return (B3*)pd; }
+\end{verbatim}
+に対する 3 番地コードは以下のようになる.
+\begin{verbatim}
+f:
+  t0 := *pd
+  t1 := t0 + (vbtbl の ΔB3 があるところまでのオフセット)
+  t2 := *t1
+  t3 := pd + t2
+  return t3
+\end{verbatim}
+
+話がここで終わっている. {\tt{vbtbl}} はどのようにして上書きされるかという話がない.
+また, {\tt{(B3*)pd}} は {\tt{static\_cast<B3*>(pd)}} と等価になるとか
+そういう話もない.
+  
+\end{document}
+
