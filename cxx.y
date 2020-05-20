@@ -112,8 +112,8 @@ pseudo_destructor_name
   | COLONCOLON                       type_name COLONCOLON '~' type_name
   |            nested_name_specifier type_name COLONCOLON '~' type_name
   |                                  type_name COLONCOLON '~' type_name
-  | COLONCOLON nested_name_specifier TEMPLATE template_id COLONCOLON '.' type_name
-  |            nested_name_specifier TEMPLATE template_id COLONCOLON '.' type_name
+  | COLONCOLON nested_name_specifier TEMPLATE template_id COLONCOLON '~' type_name
+  |            nested_name_specifier TEMPLATE template_id COLONCOLON '~' type_name
   | COLONCOLON nested_name_specifier '~' type_name
   | COLONCOLON                       '~' type_name
   |            nested_name_specifier '~' type_name
