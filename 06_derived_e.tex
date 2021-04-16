@@ -30,7 +30,7 @@ So, for virtual function call like
 \begin{verbatim}
 int g(B* pb){ return pb->vf3(); }
 \end{verbatim}
-3 address code for this becomes like bellow:
+3 address code for this becomes like below:
 \begin{verbatim}
 g:
   t0 := *pb
@@ -40,7 +40,7 @@ g:
   return t3
 \end{verbatim}
 
-If {\tt{D}} is derived from {\tt{B}} like bellow:
+If {\tt{D}} is derived from {\tt{B}} like below:
 \begin{verbatim}
 struct D : B {
   int vf3();  // Override vf3
@@ -85,7 +85,7 @@ So,
 \begin{verbatim}
 B3* f(D* pd){ return (B3*)pd; }
 \end{verbatim}
-for the above code, 3 address code becomes like bellow:
+for the above code, 3 address code becomes like below:
 \begin{verbatim}
 f:
   t0 := *pd
